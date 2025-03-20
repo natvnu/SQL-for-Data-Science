@@ -1,1 +1,84 @@
+#this is a python file - database and csv files are in the same folder
 
+import csv, sqlite3
+!pip install pandas
+!pip install ipython-sql prettytable
+!pip install ipython-sql
+import pandas as pd
+
+#create db connection
+con = sqlite3.connect("RealWorldData.db")
+#create cursor for connection con
+cur = con.cursor()
+
+import prettytable
+prettytable.DEFAULT = 'DEFAULT'
+
+
+#load magic sql
+%load_ext sql
+%sql sqlite:///RealWorldData.db
+
+#read csv data into dataframe
+df = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DB0201EN-SkillsNetwork/labs/FinalModule_Coursera_V5/data/ChicagoPublicSchools.csv")
+
+#import data into "CHICAGO_PUBLIC_SCHOOLS_DATA" table
+df.to_sql("CHICAGO_PUBLIC_SCHOOLS_DATA", con, if_exists='replace', index=False, method="multi")
+
+
+#select all table names from db
+%sql select name from sqlite_master where type='table'
+
+
+#select name and type for every column in 'CHICAGO_PUBLIC_SCHOOLS_DATA'
+%sql select name,type from PRAGMA_TABLE_INFO('CHICAGO_PUBLIC_SCHOOLS_DATA')
+
+#display 5 rows and all cols from the dataset
+%sql select * from CHICAGO_PUBLIC_SCHOOLS_DATA limit 5   
+
+
+#display the number of elementary schools
+#name of the column has to be under double quotes "", value of the column if it is string has to be under single quotes ''
+%sql select count(*) from CHICAGO_PUBLIC_SCHOOLS_DATA where "Elementary, Middle, or High School"='ES'
+
+#display the highest safety score
+%sql select MAX(Safety_Score) AS MAX_SAFETY_SCORE from CHICAGO_PUBLIC_SCHOOLS_DATA
+
+#display schools with the highest safety score
+%sql select Name_of_School, Safety_Score from CHICAGO_PUBLIC_SCHOOLS_DATA where Safety_Score = (SELECT MAX(Safety_Score) from CHICAGO_PUBLIC_SCHOOLS_DATA)
+
+#display top 10 schools with the highest "Average Student Attendance"
+%sql select Name_of_School, AVERAGE_STUDENT_ATTENDANCE from CHICAGO_PUBLIC_SCHOOLS_DATA order by AVERAGE_STUDENT_ATTENDANCE desc limit 10
+
+#display 5 Schools with the lowest Average Student Attendance sorted in ascending order based on attendance
+%sql select Name_of_School, Average_Student_Attendance from CHICAGO_PUBLIC_SCHOOLS_DATA order by Average_Student_Attendance limit 5
+
+#remove the '%' sign from the above result set 
+%sql select Name_of_School, replace(Average_Student_Attendance, '%', '') as Stud_Attendance from CHICAGO_PUBLIC_SCHOOLS_DATA order by Average_Student_Attendance LIMIT 5
+
+#display Schools with Average Student Attendance lower than 70%
+%sql select Name_of_School, Average_Student_Attendance from CHICAGO_PUBLIC_SCHOOLS_DATA where Average_Student_Attendance < '70%'
+
+#display the total College Enrollment for each Community Area
+%sql select Community_Area_Name, sum(College_Enrollment) AS TOTAL_ENROLLMENT from CHICAGO_PUBLIC_SCHOOLS_DATA group by Community_Area_Name 
+
+#display 5 Community Areas with the least total College Enrollment sorted in ascending order
+%sql select Community_Area_Name, sum(College_Enrollment) AS TOTAL_ENROLLMENT from CHICAGO_PUBLIC_SCHOOLS_DATA group by Community_Area_Name order by TOTAL_ENROLLMENT asc LIMIT 5 
+
+#display the hardship index for the community area of the school which has College Enrollment of 4368
+#read ChicagoCensusData.csv to data frame
+dfc = pd.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DB0201EN-SkillsNetwork/labs/FinalModule_Coursera_V5/data/ChicagoCensusData.csv")
+#read dataframe into CENSUS_DATA table in the database
+dfc.to_sql("CENSUS_DATA", con, if_exists='replace', index=False,method="multi")
+#1st way - join
+%sql select cd.HARDSHIP_INDEX from CENSUS_DATA cd, CHICAGO_PUBLIC_SCHOOLS_DATA cp where cd.COMMUNITY_AREA_NUMBER=cp.COMMUNITY_AREA_NUMBER and cp.COLLEGE_ENROLLMENT=4368
+#2nd way - nested query
+%sql select cd.HARDSHIP_INDEX from CENSUS_DATA cd where cd.COMMUNITY_AREA_NUMBER=(select COMMUNITY_AREA_NUMBER from CHICAGO_PUBLIC_SCHOOLS_DATA where COLLEGE_ENROLLMENT=4368)
+
+#display the hardship index for the community area which has the highest value for College Enrollment
+#1st way - double nested query
+%sql select HARDSHIP_INDEX from CENSUS_DATA where COMMUNITY_AREA_NUMBER=(select COMMUNITY_AREA_NUMBER from CHICAGO_PUBLIC_SCHOOLS_DATA where COLLEGE_ENROLLMENT=(select MAX(COLLEGE_ENROLLMENT) from CHICAGO_PUBLIC_SCHOOLS_DATA))
+#2nd way - single nested query
+%sql select community_area_number, community_area_name, hardship_index from CENSUS_DATA \
+   where community_area_number in \
+   ( select community_area_number from CHICAGO_PUBLIC_SCHOOLS_DATA order by college_enrollment desc limit 1 )
