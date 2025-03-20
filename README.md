@@ -13,6 +13,16 @@ Technologies Used: Python, Pandas, ipython-sql, sqlite3, magic sql
 
 Installation: copy and run the code in Jupyter Notebooks or other Python editor of choice. If the csv files are not downloaded once py files is executed, then store them in the same folder.
 
+Example of results:
+
+![CHICAGO_PUBLIC_SCHOOLS_DATA Columns names and types](https://github.com/natvnu/SQL-for-Data-Science/blob/main/table%20columns.png?raw=true
+)
+
+![Colege enrollment per community area](https://github.com/natvnu/SQL-for-Data-Science/blob/main/enrollment.png?raw=true)
+
+![Hardship index for the community area which has the highest value for college enrollment](https://github.com/natvnu/SQL-for-Data-Science/blob/main/Hardship%20index.png?raw=true)
+
+
 
 
 
